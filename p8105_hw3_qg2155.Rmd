@@ -1,0 +1,47 @@
+---
+title: "p8105_hw3_qg2155"
+author: "Qiu Xia (Helen) Guan"
+date: "10/11/2018"
+output: github_document
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r packages, include = FALSE}
+library(tidyverse)
+library(ggridges)
+library(p8105.datasets)
+```
+
+```{r page setup}
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "90%"
+)
+
+theme_set(theme_bw() + theme(legend.position = "bottom"))
+```
+
+## Problem 1
+
+### Load and clean BRFSS dataset 
+```{r get brfss}
+data("brfss_smart2010")
+```
+
+```{r clean brfss}
+brfss_data = brfss_smart2010 %>% 
+  janitor::clean_names() %>% 
+  filter(topic == "Overall Health") %>% 
+  mutate(response = factor(response, levels = c("Excellent", "Very good", "Good", "Fair", "Poor"))) %>% View
+```
+
+Make distinct dataset to find out states observed at 7 locations
+```{r}
+
+```
+
+
