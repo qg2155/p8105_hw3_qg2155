@@ -28,6 +28,7 @@ theme_set(theme_bw() + theme(legend.position = "bottom"))
 ## Problem 1
 
 ### Load and clean BRFSS dataset 
+
 ```{r get brfss}
 data("brfss_smart2010")
 ```
@@ -40,15 +41,18 @@ brfss_data = brfss_smart2010 %>%
 ```
 
 ### Summarizing distinct locations 
+
 ```{r states}
 brfss_data %>% 
   filter(year == 2002) %>% 
   group_by(locationabbr) %>%
   summarize(n_locations = n_distinct(locationdesc))
 ```
+
 In 2002, there were 3 states that were observed at 7 locations. These 3 states were CT, FL, and NC. 
 
 ### Creating spaghetti plot of number locations 
+
 ```{r spaghetti plot}
 brfss_data %>% 
   group_by(locationabbr, year) %>%
@@ -57,7 +61,10 @@ brfss_data %>%
     geom_point() + geom_line()
 ```
 
+This spaghetti plot shows the number of locations in each state from 2002 to 2010. Florida in particular seems to have over 40 distinct loactions in two different time points. 
+
 ### Table for mean and standard deviation of "Excellent" responses in NY
+
 ```{r  excellent responses}
 brfss_data %>%
   group_by(year) %>% 
@@ -70,42 +77,37 @@ brfss_data %>%
   knitr::kable(digits = 1)
 ```
 
+Witin the state of New York, 2002 has the highest average of 24% for excellent responses, and a standard deviation of 4.5. Year 2006 has an average of 22.5% and standard deviation of 4.0. Year 2010 has an average of 22.7% and standard deviation of 3.6. 
+
 ### Plot for distribution of each response category across states
 
-```{r eresponses, eval = FALSE}
-brfss_excellent = brfss_data %>% 
-  group_by(year, locationabbr) %>%
-  filter(response == "Excellent") %>% 
-  summarize(mean_excellent = mean(data_value, na.rm = TRUE)) %>% 
-  ggplot(aes(x = year, y = mean_excellent)) +
-    geom_violin(aes(fill = locationabbr), color = "blue", alpha = .5)
+```{r five plots}
+brfss_data %>% 
+  group_by(year, locationabbr, response) %>%
+  summarize(mean_response = mean(data_value, na.rm = TRUE)) %>% 
+  ggplot(aes(x = year, y = mean_response)) +
+    geom_violin() +
+    facet_grid(. ~ response) 
+```
 
-brfss_verygood = brfss_data %>% 
-  group_by(year, locationabbr) %>%
-  filter(response == "Very good") %>% 
-  summarize(mean_verygood = mean(data_value, na.rm = TRUE)) %>% 
-  ggplot(aes(x = year, y = mean_verygood)) +
-    geom_violin(aes(fill = locationabbr), color = "blue", alpha = .5)
+Across all states and years, the response category of "Good" seems to have the highest average, followed by "Excellent", "Fair", and "Poor". Excellent seems to have the biggest range out of them all. 
 
-brfss_good = brfss_data %>% 
-  group_by(year, locationabbr) %>%
-  filter(response == "Good") %>% 
-  summarize(mean_good = mean(data_value, na.rm = TRUE)) %>% 
-  ggplot(aes(x = year, y = mean_good)) +
-    geom_violin(aes(fill = locationabbr), color = "blue", alpha = .5)
+## Problem 2
 
-brfss_fair = brfss_data %>% 
-  group_by(year, locationabbr) %>%
-  filter(response == "Fair") %>% 
-  summarize(mean_fair= mean(data_value, na.rm = TRUE)) %>% 
-  ggplot(aes(x = year, y = mean_fair)) +
-    geom_violin(aes(fill = locationabbr), color = "blue", alpha = .5)
+### Load and clean dataset
 
-brfss_poor = brfss_data %>% 
-  group_by(year, locationabbr) %>%
-  filter(response == "Poor") %>% 
-  summarize(mean_poor = mean(data_value, na.rm = TRUE)) %>% 
-  ggplot(aes(x = year, y = mean_poor)) +
-    geom_violin(aes(fill = locationabbr), color = "blue", alpha = .5)
+```{r get instacart}
+data("instacart")
+```
 
-brfss_excellent/brfss_verygood/brfss_good/brfss_fair/brfss_poor
+```{r clean instacart}
+instacart_data = instacart %>% 
+  janitor::clean_names() 
+```
+
+```{r most items}
+instacart_data %>% 
+summarize(n_aisles = n_distinct(aisle_id))
+```
+
+There are `r instacart_data %>% summarize(n_aisles = n_distinct(aisle_id))` aisles. 
