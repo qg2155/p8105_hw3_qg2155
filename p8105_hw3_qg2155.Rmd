@@ -13,12 +13,13 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(patchwork)
 library(p8105.datasets)
+library(hexbin)
 ```
 
 ```{r page setup}
 knitr::opts_chunk$set(
   fig.width = 6,
-  fig.asp = 1.3,
+  fig.asp = 1,
   out.width = "90%"
 )
 
@@ -37,7 +38,7 @@ data("brfss_smart2010")
 brfss_data = brfss_smart2010 %>% 
   janitor::clean_names() %>% 
   filter(topic == "Overall Health") %>% 
-  mutate(response = as.factor(response))
+  mutate(response = factor(response, levels = str_c(c("Excellent" , "Very good", "Good", "Fair", "Poor"))))
 ```
 
 ### Summarizing distinct locations 
@@ -61,7 +62,7 @@ brfss_data %>%
     geom_point() + geom_line()
 ```
 
-This spaghetti plot shows the number of locations in each state from 2002 to 2010. Florida in particular seems to have over 40 distinct loactions in two different time points. 
+This spaghetti plot shows the number of locations in each state from 2002 to 2010. Florida in particular seems to have over 40 distinct locations in two different time points. Majority of states seem to have around 0 to 10 different locations across the years. 
 
 ### Table for mean and standard deviation of "Excellent" responses in NY
 
@@ -87,10 +88,11 @@ brfss_data %>%
   summarize(mean_response = mean(data_value, na.rm = TRUE)) %>% 
   ggplot(aes(x = year, y = mean_response)) +
     geom_violin() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
     facet_grid(. ~ response) 
 ```
 
-Across all states and years, the response category of "Good" seems to have the highest average, followed by "Excellent", "Fair", and "Poor". Excellent seems to have the biggest range out of them all. 
+Across all states and years, the response category of "Very good" seems to have the highest average, followed by "Good", "Excellent", "Fair", and "Poor". Average excellent responses range from 12 to almost 30%. Very good ranges from 16 to 43%. Good ranges from 24 to 36%. Fair ranges from 5 to 17%. Poor ranges from 2 to 9%. Very good responses seem to have the most variance whereas poor responses seem to have the least variance.  
 
 ## Problem 2
 
@@ -140,6 +142,8 @@ instacart_data %>%
   scale_x_discrete(breaks = c("132", "68", "39", "60", "1", "89", "23", "4", "108", "78" , "83"))
 
 ```
+
+This bar graph shows that two aisles in particular have a much greater items ordered compared to the rest of the aisles. On the other end, there are also a good number of aisles that have barely any items ordered. A majority of the aisles get anywhere around 0 to 25000 items ordred. 
 
 ### Table for most popular item in each of the three aisles
 
@@ -199,7 +203,9 @@ noaa_data %>%
             )
 ```
 
-This NY NOAA dataset has `r ncol(noaa_data)` variables and `r nrow(noaa_data)` observations. The variables are id, date, prcp, snow, snwd, tmax, and tmin. The key variables are date, precipitation, snow, snow depth, maximum and minimum temperatures. These variables will be able to give us a lot of information on the weather pattern in New York, especially for precipitation and snow in the winters. One problem with this dataset is that there are many missing values for snow, snwd, tmax and tmin. The proportion of missing in precipitation column is 5.62%, snow is 14.7%, snow depth is 22.8%, tmax and tmin are both 43.7%. This extent in which data is missing is problematic for our analysis.
+This NY NOAA dataset has `r ncol(noaa_data)` variables and `r nrow(noaa_data)` observations. The original 7 variables are id, date, prcp, snow, snwd, tmax, and tmin. After separting date into year, month, and day, there are now an additional 2 variables to make a total of 9 variables in the cleaned dataset. The key variables are date, precipitation, snow, snow depth, maximum and minimum temperatures. These variables will be able to give us a lot of information on the weather pattern in New York, especially for precipitation and snow in the winters. 
+
+One problem with this dataset is that there are many missing values for snow, snwd, tmax and tmin. This is probably due to the fact that some stations only collect a subset of variables. The proportion of missing in precipitation column is 5.62%, snow is 14.7%, snow depth is 22.8%, tmax and tmin are both 43.7%. The extent in which data is missing is problematic for our analysis. It will be difficult to get accurate weather patterns across NY since we might be missing critical pieces of information from stations that may be situated in locations that are in particular warmer or colder than average. 
 
 ```{r snowfall}
 noaa_data %>% 
@@ -231,15 +237,32 @@ noaa_data %>%
 The graphs show that there is an appreciable difference between the average maximum temperatures between Jan and July across all years. The range for the average max temp in Jan is anywhere from -15 C to 15 C whereas the average for July is between 20 C to 34 C. There are outliers in some of the years for both months. July has more outliers for low temperatures across years whereas Jan has a relatively equal number of outliers for warmer and cooler average maximum temperatures. Year 1988 had an outlier for especially low temperature (17C) in July. The average maximum temperatures in July also have a smaller variance compared to Janurary judging by the size of the box plots. 
 
 ### two panel plot for temperatures and snowfall
-```{r download hexbin}
-install.packages("hexbin")
-library(hexbin)
-```
 
 ```{r two panel plot}
-noaa_data %>% 
-  ggplot(aes(x = tmin, y = tmax)) +
-  geom_point()
+tmin_tmax_plot = ggplot(noaa_data, aes(x = tmin, y = tmax)) +
+  geom_hex() +
+  labs(
+    title = "Temperature Plot",
+    x = "Minimum daily temperature (C)",
+    y = "Maximum daily temperature (C)"
+  )
+
+snowfall_plot = noaa_data %>% 
+  filter(snow > 0 & snow < 100) %>% 
+  group_by(year) %>% 
+  ggplot(aes(x = year, y = snow)) +
+  geom_boxplot() +
+  labs(
+    title = "Distribution of Snowfall(0>snow<100) by Year",
+    x = "Year",
+    y = "Distribution of Snow"
+  ) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+
+tmin_tmax_plot/snowfall_plot
 ```
 
+The first tmax and tmin plot shows that the minimum daily temperatures can range from -45 C to 40 C, with outliers near -60 C on the cold end and up to 60 C on the warm end. On the other end, maximum temperatures can range from -30 C to 40 C, with outliers as cold as -40 C and as hot as 60 C. The light shade of blue in the center of the cluster represents the range for the most common maximum and minimum temperatures. This means the most observed minimum temperature in NY is from 0 C to 15 C, and the most observed maximum temperature is from 10 C to 30 C. 
+
+The second box plot shows the distribution of snowfall across all years. This box plot shows a rather stable distribution of snowfall across most years because the boxes are very similar to one another. The average distribution of snowfall is around 25 mm across all years. Years 1998, 2004, 2006, 2007, and 2010 had noticibly less snowfalls than usual. However, year 2006 also had many outliers for high snall fall ranging up to 100 mm. Years 1998 and 2010 also had a few outliers for heavy snowfall. 
 
